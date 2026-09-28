@@ -1,0 +1,72 @@
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# ==============================
+# Secrets / Environment variables
+# ==============================
+.env
+.env.*
+!.env.example
+
+cloudrun-env.yaml
+
+# API / credential files
+credentials/
+*.pem
+*.key
+service-account*.json
+
+# ==============================
+# Employee documents
+# ==============================
+documents/
+*.pdf
+
+# ==============================
+# Local AI models
+# ==============================
+models/
+
+# ==============================
+# Generated RAG data
+# ==============================
+data/
+*.faiss
+
+# ==============================
+# Build / Release
+# ==============================
+build/
+dist/
+*.spec
+
+# ==============================
+# IDE / OS
+# ==============================
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db
+
+# ==============================
+# Logs / temporary files
+# ==============================
+*.log
+*.tmp
+*.temp
+
+# ==============================
+# Test files
+# ==============================
+test_*.py

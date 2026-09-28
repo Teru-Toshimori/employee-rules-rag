@@ -1,0 +1,8 @@
+pymupdf
+sentence-transformers
+faiss-cpu
+numpy
+requests
+PySide6
+pyinstaller
+lark-oapi

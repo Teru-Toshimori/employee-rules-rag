@@ -1,0 +1,35 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: local_rag_ollama
+    restart: unless-stopped
+
+    ports:
+      - "11434:11434"
+
+    volumes:
+      - ollama_data:/root/.ollama
+
+  rag-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: local_rag_bot
+    restart: unless-stopped
+
+    depends_on:
+      - ollama
+
+    environment:
+      LARK_APP_ID: ${LARK_APP_ID}
+      LARK_APP_SECRET: ${LARK_APP_SECRET}
+      OLLAMA_BASE_URL: http://ollama:11434
+
+    volumes:
+      - ./documents:/app/documents
+      - ./data:/app/data
+      - ./models:/app/models
+
+volumes:
+  ollama_data:
