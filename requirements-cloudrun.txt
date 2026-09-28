@@ -4,3 +4,4 @@ openai
 faiss-cpu
 numpy
 lark-oapi
+python-dotenv==1.2.3

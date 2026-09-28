@@ -2,6 +2,8 @@ from pathlib import Path
 import os
 import sys
 
+from dotenv import load_dotenv
+
 
 def get_base_dir() -> Path:
     """
@@ -24,6 +26,22 @@ def get_base_dir() -> Path:
 # ============================================================
 
 BASE_DIR = get_base_dir()
+
+# ------------------------------------------------------------
+# 環境変数
+# ------------------------------------------------------------
+# ローカル開発時はプロジェクト直下の .env を読み込む。
+#
+# Cloud RunではCloud Run側に設定されている環境変数を使用する。
+# load_dotenv() はデフォルトで既存の環境変数を上書きしない。
+# ------------------------------------------------------------
+
+ENV_PATH = BASE_DIR / ".env"
+
+load_dotenv(
+    dotenv_path=ENV_PATH,
+    override=False,
+)
 
 DOCUMENTS_DIR = (
     BASE_DIR

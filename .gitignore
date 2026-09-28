@@ -6,21 +6,25 @@ __pycache__/
 *.pyo
 *.pyd
 
+# ==============================
 # Virtual environment
+# ==============================
 .venv/
 venv/
 env/
 
 # ==============================
-# Secrets / Environment variables
+# Environment
 # ==============================
-.env
+# .env 本体は空テンプレートとしてGit管理するため除外しない
 .env.*
-!.env.example
 
+# Cloud Run用の秘密情報ファイル
 cloudrun-env.yaml
 
+# ==============================
 # API / credential files
+# ==============================
 credentials/
 *.pem
 *.key
@@ -51,6 +55,11 @@ dist/
 *.spec
 
 # ==============================
+# Test files
+# ==============================
+test_*.py
+
+# ==============================
 # IDE / OS
 # ==============================
 .vscode/
@@ -65,8 +74,3 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
-
-# ==============================
-# Test files
-# ==============================
-test_*.py

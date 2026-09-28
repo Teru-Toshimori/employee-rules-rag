@@ -6,3 +6,4 @@ requests
 PySide6
 pyinstaller
 lark-oapi
+python-dotenv==1.2.3
