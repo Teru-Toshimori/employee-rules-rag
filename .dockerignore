@@ -16,4 +16,13 @@ README.md
 
 data/logs/
 
+# 環境変数・認証情報
 .env
+.env.*
+cloudrun-env.yaml
+credentials/
+*.key
+*.pem
+
+# ローカル開発用
+.vscode/

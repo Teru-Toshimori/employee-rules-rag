@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import time
 from typing import Any
 
 import lark_oapi as lark
@@ -12,6 +13,7 @@ from fastapi import (
     Request,
     Response,
 )
+
 from lark_oapi.core.model.raw_request import (
     RawRequest,
 )
@@ -52,6 +54,82 @@ app = FastAPI(
 message_handler: MessageHandler | None = None
 lark_reply_client: LarkReplyClient | None = None
 lark_event_dispatcher = None
+
+
+# ============================================================
+# Larkイベント重複防止
+# ============================================================
+
+# message_id -> 登録時刻（monotonic）
+processed_message_ids: dict[str, float] = {}
+
+# 同時に同じmessage_idが届いた場合の競合を防ぐ
+processed_message_ids_lock = asyncio.Lock()
+
+# 処理済みmessage_idを保持する時間
+# 30分
+MESSAGE_ID_TTL_SECONDS = 30 * 60
+
+
+def cleanup_processed_message_ids(
+    current_time: float,
+) -> None:
+    """
+    保持期限を過ぎたmessage_idを削除する。
+
+    processed_message_ids_lockを取得した状態で
+    呼び出すことを前提とする。
+    """
+
+    expired_message_ids = [
+        message_id
+        for message_id, registered_at
+        in processed_message_ids.items()
+        if (
+            current_time - registered_at
+            > MESSAGE_ID_TTL_SECONDS
+        )
+    ]
+
+    for message_id in expired_message_ids:
+        processed_message_ids.pop(
+            message_id,
+            None,
+        )
+
+
+async def register_message_id(
+    message_id: str,
+) -> bool:
+    """
+    message_idを処理中として登録する。
+
+    初回:
+        True
+
+    すでに登録済み:
+        False
+
+    Lock内で確認と登録をまとめて行うことで、
+    同じmessage_idがほぼ同時に到着した場合でも
+    1件だけがRAG処理へ進むようにする。
+    """
+
+    async with processed_message_ids_lock:
+        current_time = time.monotonic()
+
+        cleanup_processed_message_ids(
+            current_time
+        )
+
+        if message_id in processed_message_ids:
+            return False
+
+        processed_message_ids[
+            message_id
+        ] = current_time
+
+        return True
 
 
 def validate_environment_variables() -> None:
@@ -163,7 +241,6 @@ def initialize_message_handler() -> MessageHandler:
         embedding_service=embedding_service,
         vector_store=vector_store,
         openai_client=openai_client,
-        llm_provider="openai",
     )
 
     print(
@@ -417,9 +494,51 @@ async def lark_events(
             "status": "ignored",
         }
 
+    # --------------------------------------------------------
+    # message_id取得
+    # --------------------------------------------------------
+
+    message_id = message[
+        "message_id"
+    ]
+
+    # message_idそのものはログへ出力しない。
+    # 同一イベントの再送確認用として
+    # 末尾6文字だけ記録する。
+    message_id_suffix = (
+        message_id[-6:]
+        if len(message_id) >= 6
+        else "short-id"
+    )
+
     # 質問本文はログへ出力しない
     print(
-        "Lark HTTPメッセージを受信しました。"
+        "Lark HTTPメッセージを受信しました。 "
+        f"message_id_suffix={message_id_suffix}"
+    )
+
+    # --------------------------------------------------------
+    # 重複イベントチェック
+    # --------------------------------------------------------
+
+    is_new_message = await register_message_id(
+        message_id
+    )
+
+    if not is_new_message:
+        print(
+            "重複Larkイベントを検出しました。 "
+            "RAG処理と返信をスキップします。 "
+            f"message_id_suffix={message_id_suffix}"
+        )
+
+        return {
+            "status": "duplicate_ignored",
+        }
+
+    print(
+        "Larkイベントを処理対象として登録しました。 "
+        f"message_id_suffix={message_id_suffix}"
     )
 
     # --------------------------------------------------------
@@ -439,16 +558,13 @@ async def lark_events(
 
     # 回答本文はログへ出力しない
     print(
-        "RAG回答生成が完了しました。"
+        "RAG回答生成が完了しました。 "
+        f"message_id_suffix={message_id_suffix}"
     )
 
     # --------------------------------------------------------
     # Larkへ返信
     # --------------------------------------------------------
-
-    message_id = message[
-        "message_id"
-    ]
 
     is_test_message = (
         message_id.startswith(
@@ -477,7 +593,8 @@ async def lark_events(
         )
 
         print(
-            "Larkへの返信が完了しました。"
+            "Larkへの返信が完了しました。 "
+            f"message_id_suffix={message_id_suffix}"
         )
 
     # 回答本文はHTTPレスポンスへ含めない

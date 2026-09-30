@@ -2,37 +2,33 @@ from __future__ import annotations
 
 from typing import Any
 
-from config import (
-    SEARCH_SCORE_THRESHOLD,
-    SEARCH_TOP_K,
-)
+from config import SEARCH_TOP_K
 
 
 class RagService:
     """
-    RAG処理を共通化するサービス。
+    OpenAIを使用したRAG処理を共通化するサービス。
 
-    PySide6 GUIやLark Botなど、
-    どのインターフェースからでも
-    同じRAG処理を利用できるようにする。
-
-    回答生成には、
-    OllamaまたはOpenAIを使用できる。
+    処理:
+    1. 質問をEmbedding
+    2. FAISSから関連チャンクを検索
+    3. OpenAIへ質問と検索結果を送信
+    4. 回答と参照情報を返す
     """
+
+    NOT_FOUND_MESSAGE = (
+        "社員規則からは確認できません"
+    )
 
     def __init__(
         self,
         embedding_service,
         vector_store,
-        ollama_client=None,
-        openai_client=None,
-        llm_provider: str = "ollama",
+        openai_client,
     ) -> None:
         self.embedding_service = embedding_service
         self.vector_store = vector_store
-        self.ollama_client = ollama_client
         self.openai_client = openai_client
-        self.llm_provider = llm_provider
 
     def ask(
         self,
@@ -84,63 +80,35 @@ class RagService:
 
         if not search_results:
             return {
-                "answer": (
-                    "社員規則からは確認できません"
-                ),
+                "answer": self.NOT_FOUND_MESSAGE,
                 "references": [],
                 "found": False,
             }
 
         # ====================================================
-        # 4. Ollama版のみ類似度判定
+        # 4. OpenAIで回答生成
         # ====================================================
 
-        if self.llm_provider == "ollama":
-
-            best_score = (
-                search_results[0]["score"]
+        answer = (
+            self.openai_client.generate_answer(
+                question=cleaned_question,
+                contexts=search_results,
             )
-
-            if (
-                best_score
-                < SEARCH_SCORE_THRESHOLD
-            ):
-                return {
-                    "answer": (
-                        "社員規則からは確認できません"
-                    ),
-                    "references": search_results,
-                    "found": False,
-                }
-
-        # ====================================================
-        # 5. 回答生成
-        # ====================================================
-
-        answer = self._generate_answer(
-            question=cleaned_question,
-            search_results=search_results,
         )
 
         # ====================================================
-        # 6. 回答可能か判定
+        # 5. 回答可能か判定
         # ====================================================
 
-        not_found_message = (
-            "社員規則からは確認できません"
-        )
-
-        normalized_answer = (
-            answer.strip()
-        )
+        normalized_answer = answer.strip()
 
         found = (
             normalized_answer
-            != not_found_message
+            != self.NOT_FOUND_MESSAGE
         )
 
         # ====================================================
-        # 7. 結果
+        # 6. 結果
         # ====================================================
 
         return {
@@ -152,57 +120,3 @@ class RagService:
             ),
             "found": found,
         }
-
-    def _generate_answer(
-        self,
-        question: str,
-        search_results: list[dict],
-    ) -> str:
-        """
-        設定されたLLMを使用して回答を生成する。
-        """
-
-        # ====================================================
-        # OpenAI
-        # ====================================================
-
-        if self.llm_provider == "openai":
-
-            if self.openai_client is None:
-                raise RuntimeError(
-                    "OpenAIClientが設定されていません。"
-                )
-
-            return (
-                self.openai_client.generate_answer(
-                    question=question,
-                    contexts=search_results,
-                )
-            )
-
-        # ====================================================
-        # Ollama
-        # ====================================================
-
-        if self.llm_provider == "ollama":
-
-            if self.ollama_client is None:
-                raise RuntimeError(
-                    "OllamaClientが設定されていません。"
-                )
-
-            return (
-                self.ollama_client.generate_answer(
-                    question=question,
-                    search_results=search_results,
-                )
-            )
-
-        # ====================================================
-        # 未対応
-        # ====================================================
-
-        raise ValueError(
-            f"未対応のLLMプロバイダーです: "
-            f"{self.llm_provider}"
-        )

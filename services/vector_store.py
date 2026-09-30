@@ -7,11 +7,6 @@ from typing import Any
 import faiss
 import numpy as np
 
-from config import (
-    CHUNKS_PATH,
-    FAISS_INDEX_PATH,
-)
-
 
 class FaissVectorStore:
     """
@@ -25,8 +20,8 @@ class FaissVectorStore:
 
     def __init__(
         self,
-        index_path: Path = FAISS_INDEX_PATH,
-        chunks_path: Path = CHUNKS_PATH,
+        index_path: Path,
+        chunks_path: Path,
     ) -> None:
         self.index_path = index_path
         self.chunks_path = chunks_path
@@ -74,6 +69,11 @@ class FaissVectorStore:
 
         # 保存フォルダ作成
         self.index_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        self.chunks_path.parent.mkdir(
             parents=True,
             exist_ok=True,
         )
