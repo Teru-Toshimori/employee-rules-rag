@@ -78,7 +78,8 @@ SEARCH_TOP_K = 3
 CHUNKING_VERSION = (
     "article-v1"
 )
-
+# PDF表データOCR処理のバージョン
+OCR_VERSION = "1.0.0"
 
 # ============================================================
 # OpenAI API設定

@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 from typing import Any
-
+from config import OCR_VERSION
 from config import (
     CHUNKING_VERSION,
     OPENAI_CHUNKS_PATH,
@@ -90,7 +90,11 @@ def is_openai_index_cache_valid(
     saved_chunking_version = metadata.get(
         "chunking_version"
     )
-
+    # dulan 追加...........................
+    saved_ocr_version = metadata.get(
+        "ocr_version"
+    )
+     #.....................................
     if saved_pdf_hash != current_pdf_hash:
         return False
 
@@ -102,7 +106,10 @@ def is_openai_index_cache_valid(
         != CHUNKING_VERSION
     ):
         return False
-
+    # dulan 追加...........................
+    if saved_ocr_version != OCR_VERSION:
+        return False
+    #.....................................
     return True
 
 
@@ -131,6 +138,9 @@ def save_openai_index_metadata(
         "chunking_version": (
             CHUNKING_VERSION
         ),
+    # dulan 追加...........................
+        "ocr_version": OCR_VERSION,
+    #.....................................
         "chunk_count": chunk_count,
     }
 

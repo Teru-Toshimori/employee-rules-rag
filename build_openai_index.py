@@ -85,7 +85,38 @@ def create_openai_index() -> None:
     chunks = split_pages_into_articles(
         pages
     )
+# ========================================================
+# Dulan追加
+# ========================================================
+    from services.pdf_table_ocr import (
+        extract_pdf_tables,
+        merge_ocr_tables_into_chunks,
+    )
 
+    print()
+    print("[OCR] PDF内の表データを認識しています...")
+
+    tables = extract_pdf_tables(
+        PDF_PATH
+    )
+
+    chunks, skipped_tables = (
+        merge_ocr_tables_into_chunks(
+            chunks,
+            tables,
+        )
+    )
+
+    print(f"OCR表データ数: {len(tables)}")
+    print(f"未統合表数: {len(skipped_tables)}")
+
+    if skipped_tables:
+        raise RuntimeError(
+            "未統合のOCR表があります。"
+            "内容を確認してください。"
+        )
+# ========================================================
+# ========================================================
     print(
         f"      チャンク作成完了: "
         f"{len(chunks)}件"
