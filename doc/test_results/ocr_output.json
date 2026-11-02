@@ -1,0 +1,32 @@
+{
+  "pdf": "test_pdfs\\RAG汎用性テスト_業務マニュアル.pdf",
+  "target_pages": null,
+  "table_count": 1,
+  "elapsed_seconds": 57.34,
+  "structure_checks": [
+    {
+      "line_count": 4,
+      "table_line_count": 4,
+      "column_counts": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "consistent_columns": true
+    }
+  ],
+  "tables": [
+    {
+      "page": 3,
+      "article_number": null,
+      "text": "【OCR抽出表データ】\n区分 | 受付時間 | 担当部署 | 目標回答時間\n一般問い合わせ | 平日9:00～17:00 | 総務チーム | 2営業日以內\nシステム障害 | 平日9:00～18:00 | ITサポート | 4時間以內\n緊急停止 | 24時間受付 | 運用管理室 | 30分以內",
+      "bbox": [
+        209,
+        692,
+        1571,
+        1079
+      ]
+    }
+  ]
+}
